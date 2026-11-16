@@ -4,7 +4,7 @@ use crate::{
     exid::ExId,
     hydrate,
     marks::{Mark, MarkSet},
-    op_set2::Parents,
+    op_set2::{ChangeMetadata, Parents},
     Change, ChangeHash, Cursor, ObjType, Prop, TextEncoding, Value, ROOT,
 };
 
@@ -299,6 +299,9 @@ pub trait ReadDoc {
 
     /// Get a change by its hash.
     fn get_change_by_hash(&self, hash: &ChangeHash) -> Option<Change>;
+
+    /// Get the metadata of a change by its hash.
+    fn get_change_meta_by_hash(&self, hash: &ChangeHash) -> Option<ChangeMetadata<'_>>;
 
     /// Return some statistics about the document
     fn stats(&self) -> Stats;

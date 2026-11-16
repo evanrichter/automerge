@@ -4448,3 +4448,42 @@ fn patches_expose_surviving_conflict_after_deleting_other_branch_from_fuzz_trace
         .unwrap();
     assert_eq!(actual, expected);
 }
+
+#[test]
+fn get_change_meta_by_hash_matches_the_change() {
+    let mut doc = AutoCommit::new();
+    doc.put(ROOT, "key1", 1).unwrap();
+    let first = doc
+        .commit_with(CommitOptions::default().with_message("first"))
+        .unwrap();
+    doc.put(ROOT, "key1", 2).unwrap();
+    doc.put(ROOT, "key2", 3).unwrap();
+    let second = doc.commit().unwrap();
+
+    // Through a shared reference, as a `ReadDoc` reader holds the document.
+    let read: &AutoCommit = &doc;
+    for hash in [first, second] {
+        let change = ReadDoc::get_change_by_hash(read, &hash).unwrap();
+        let meta = ReadDoc::get_change_meta_by_hash(read, &hash).unwrap();
+        assert_eq!(meta.hash, hash);
+        assert_eq!(meta.actor.as_ref(), change.actor_id());
+        assert_eq!(meta.seq, change.seq());
+        assert_eq!(meta.start_op, change.start_op().get());
+        assert_eq!(meta.max_op, change.max_op());
+        assert_eq!(meta.timestamp, change.timestamp());
+        assert_eq!(meta.message.as_deref(), change.message());
+        assert_eq!(meta.deps, change.deps());
+    }
+    let unknown = automerge::ChangeHash([7; 32]);
+    assert!(ReadDoc::get_change_meta_by_hash(read, &unknown).is_none());
+
+    let mut doc: Automerge = doc.document().clone();
+    let meta = ReadDoc::get_change_meta_by_hash(&doc, &second).unwrap();
+    assert_eq!(meta.deps, vec![first]);
+    doc.transact(|tx| {
+        let meta = tx.get_change_meta_by_hash(&first).unwrap();
+        assert_eq!(meta.message.as_deref(), Some("first"));
+        Ok::<_, ()>(())
+    })
+    .unwrap();
+}

@@ -300,6 +300,13 @@ macro_rules! impl_read_doc_for_tx {
                 self.doc.get_change_by_hash(hash)
             }
 
+            fn get_change_meta_by_hash(
+                &self,
+                hash: &crate::ChangeHash,
+            ) -> Option<crate::ChangeMetadata<'_>> {
+                self.doc.get_change_meta_by_hash(hash)
+            }
+
             fn stats(&self) -> crate::read::Stats {
                 self.doc.stats()
             }

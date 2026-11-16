@@ -2268,6 +2268,10 @@ impl ReadDoc for Automerge {
             .pop()
     }
 
+    fn get_change_meta_by_hash(&self, hash: &ChangeHash) -> Option<ChangeMetadata<'_>> {
+        Automerge::get_change_meta_by_hash(self, hash)
+    }
+
     fn stats(&self) -> crate::read::Stats {
         let num_changes = self.change_graph.len() as u64;
         let num_ops = self.ops.len() as u64;

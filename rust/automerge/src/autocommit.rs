@@ -1057,6 +1057,10 @@ impl ReadDoc for AutoCommit {
         self.doc.get_change_by_hash(hash)
     }
 
+    fn get_change_meta_by_hash(&self, hash: &ChangeHash) -> Option<ChangeMetadata<'_>> {
+        self.doc.get_change_meta_by_hash(hash)
+    }
+
     fn stats(&self) -> crate::read::Stats {
         self.doc.stats()
     }
