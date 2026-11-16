@@ -951,29 +951,18 @@ impl BatchApply {
     }
 
     fn insert_runs_of_ops(&mut self, doc: &mut Automerge) {
-        let mut last_pos = None;
-        let mut start = 0;
-        let mut shift = 0;
-        for (i, op) in self.ops.iter().enumerate() {
-            if op.pos != last_pos {
-                if let Some(pos) = last_pos {
-                    let end = i;
-                    shift += self.insert_ops(doc, pos + shift, start..end);
-                    start = end;
-                }
-                last_pos = op.pos;
+        // Insert back to front so each run lands above the runs still to insert
+        // and their positions stay valid. Ops with no `pos` join the run after
+        // them; trailing ones are not inserted.
+        let mut end = self.ops.len();
+        let runs = self.ops.chunk_by(|a, b| a.pos == b.pos || a.pos.is_none());
+        for run in runs.rev() {
+            let start = end - run.len();
+            if let Some(pos) = run[run.len() - 1].pos {
+                doc.ops_mut().splice(pos, &self.ops[start..end]);
             }
+            end = start;
         }
-        if let Some(pos) = last_pos {
-            self.insert_ops(doc, pos + shift, start..self.ops.len());
-        }
-    }
-
-    pub(crate) fn insert_ops(&self, doc: &mut Automerge, pos: usize, range: Range<usize>) -> usize {
-        let batch = &self.ops[range];
-        let start = doc.ops().len();
-        doc.ops_mut().splice(pos, batch);
-        doc.ops().len() - start
     }
 
     pub(crate) fn order_ops_for_doc(&mut self, obj_info: &mut ObjIndex) {
